@@ -114,9 +114,13 @@ jobs:
                   echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
                   
                   # 디버깅을 위한 변수 출력 (시크릿 값은 마스킹됨)
-                  echo "KCR_REGISTRY_URL: ${{ secrets.KCR_REGISTRY_URL }}"
-                  echo "KCR_IMAGE_NAME: ${{ secrets.KCR_IMAGE_NAME }}"
-                  echo "FULL_IMAGE_NAME: ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_IMAGE_NAME }}:$IMAGE_TAG"
+                  echo "KCR_REGISTRY_URL: '${{ secrets.KCR_REGISTRY_URL }}'"
+                  echo "KCR_IMAGE_NAME: '${{ secrets.KCR_IMAGE_NAME }}'"
+                  echo "FULL_IMAGE_NAME: '${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_IMAGE_NAME }}:$IMAGE_TAG'"
+                  
+                  # 시크릿 값 길이 확인 (값이 비어있는지 체크)
+                  echo "KCR_REGISTRY_URL length: ${#KCR_REGISTRY_URL}"
+                  echo "KCR_IMAGE_NAME length: ${#KCR_IMAGE_NAME}"
                   
                   docker build -t ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_IMAGE_NAME }}:$IMAGE_TAG .
                   docker push ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_IMAGE_NAME }}:$IMAGE_TAG
