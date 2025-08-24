@@ -78,15 +78,15 @@ jobs:
 
                   # SSH 접속 시 호스트 키 확인을 위한 디렉터리를 생성합니다.
                   mkdir -p ~/.ssh
-                  # 베스천 호스트 키를 known_hosts에 추가합니다.
-                  ssh-keyscan -v -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>&1
+                  # 베스천 호스트 키를 known_hosts에 추가합니다 (포트 포함)
+                  ssh-keyscan -H -p $SSH_PORT "$SSH_HOST" >> ~/.ssh/known_hosts 2>&1
 
                   # 베스천을 통해 백엔드 서버에 접속하여 배포 명령을 실행합니다.
-                  # StrictHostKeyChecking=yes로 보안을 유지합니다.
-                                     ssh -v -o StrictHostKeyChecking=yes \
-                       -p $SSH_PORT \
-                       "ubuntu@${{ env.SSH_HOST }}" \
-                       "docker stop scratcha_server || true && docker rm scratcha_server || true && docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} && docker run -d --name scratcha_server --env-file /home/ubuntu/.env -p 8001:8001 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}" 2>&1
+                  # StrictHostKeyChecking=no로 호스트 키 검증 우회 (CI/CD 환경용)
+                  ssh -v -o StrictHostKeyChecking=no \
+                    -p $SSH_PORT \
+                    "$SSH_USERNAME@$SSH_HOST" \
+                    "docker stop scratcha_server || true && docker rm scratcha_server || true && docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} && docker run -d --name scratcha_server --env-file /home/ubuntu/.env -p 8001:8001 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
 
     # 메인 브랜치에 푸시될 때 ArgoCD로 배포하는 새로운 잡
     deploy-to-argocd:
