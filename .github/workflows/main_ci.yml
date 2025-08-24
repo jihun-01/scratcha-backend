@@ -43,18 +43,24 @@ jobs:
                   echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
                   
                   # 디버깅을 위한 변수 출력 (시크릿 값은 마스킹됨)
-                  echo "REGISTRY: '${{ env.REGISTRY }}'"
-                  echo "IMAGE_NAME: '${{ env.IMAGE_NAME }}'"
-                  echo "FULL_IMAGE_NAME: '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG'"
+                  echo "=== 빌드 이미지 정보 ==="
+                  echo "KCR_REGISTRY_URL: '${{ secrets.KCR_REGISTRY_URL }}'"
+                  echo "KCR_DEV_IMAGE_NAME: '${{ secrets.KCR_DEV_IMAGE_NAME }}'"
+                  echo "FULL_IMAGE_NAME: '${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:$IMAGE_TAG'"
                   
                   # 시크릿 값 길이 확인 (값이 비어있는지 체크)
-                  echo "REGISTRY length: ${#REGISTRY}"
-                  echo "IMAGE_NAME length: ${#IMAGE_NAME}"
+                  echo "KCR_REGISTRY_URL length: ${#KCR_REGISTRY_URL}"
+                  echo "KCR_DEV_IMAGE_NAME length: ${#KCR_DEV_IMAGE_NAME}"
+                  echo "========================="
                   
+                  # 빌드 및 푸시 (오류 발생 시 중단)
+                  set -e
                   docker build -t ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:$IMAGE_TAG .
                   docker push ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:$IMAGE_TAG
                   docker tag ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:$IMAGE_TAG ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:latest
                   docker push ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:latest
+                  
+                  echo "✅ 이미지 빌드 및 푸시 완료"
 
             - name: Run tests (if any)
               # 이 부분에 테스트 명령어를 추가하여 이미지를 컨테이너로 실행하고 테스트합니다.
