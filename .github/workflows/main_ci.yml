@@ -69,16 +69,22 @@ jobs:
                   echo "🔨 Docker 이미지 빌드 시작..."
                   # 빌드 및 푸시 (오류 발생 시 중단)
                   set -e
-                  docker build -t ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:$IMAGE_TAG .
+                  
+                  # team2-repo 형식으로 이미지 경로 구성
+                  FULL_IMAGE_PATH="${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:$IMAGE_TAG"
+                  echo "빌드할 이미지 경로: $FULL_IMAGE_PATH"
+                  
+                  docker build -t "$FULL_IMAGE_PATH" .
                   echo "✅ 이미지 빌드 완료"
                   
                   echo "📤 Docker 이미지 푸시 시작..."
-                  docker push ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:$IMAGE_TAG
+                  docker push "$FULL_IMAGE_PATH"
                   echo "✅ 이미지 푸시 완료"
                   
                   echo "🏷️  latest 태그 생성 및 푸시..."
-                  docker tag ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:$IMAGE_TAG ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:latest
-                  docker push ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:latest
+                  LATEST_IMAGE_PATH="${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:latest"
+                  docker tag "$FULL_IMAGE_PATH" "$LATEST_IMAGE_PATH"
+                  docker push "$LATEST_IMAGE_PATH"
                   
                   echo "🎉 이미지 빌드 및 푸시 완료!"
 
