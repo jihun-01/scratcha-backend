@@ -38,17 +38,13 @@ jobs:
             - name: Build and push Docker image
               # 이미지를 빌드하고 KCR에 푸시합니다.
               # date + github.sha 조합으로 태그를 생성하고 빌드 캐시를 활용합니다.
-              uses: docker/build-push-action@v5
-              with:
-                  context: .
-                  push: true
-                  tags: ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:latest, ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:$(date +%Y%m%d%H%M%S)-${{ github.sha }}
-                  # 최신 이미지에서 빌드 캐시를 가져와 빌드 시간을 단축합니다.
-                  cache-from: type=registry,ref=${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:latest
-                  # 다음 빌드에 사용될 캐시를 인라인으로 저장합니다.
-                  cache-to: type=inline
-                  # 빌드 캐시를 활성화하여 레이어 재사용을 최적화합니다.
-                  platforms: linux/amd64
+              run: |
+                  IMAGE_TAG=$(date +%Y%m%d%H%M%S)-${{ github.sha }}
+                  echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+                  docker build -t ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:$IMAGE_TAG .
+                  docker push ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:$IMAGE_TAG
+                  docker tag ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:$IMAGE_TAG ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:latest
+                  docker push ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_DEV_IMAGE_NAME }}:latest
 
             - name: Run tests (if any)
               # 이 부분에 테스트 명령어를 추가하여 이미지를 컨테이너로 실행하고 테스트합니다.
