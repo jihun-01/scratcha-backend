@@ -41,6 +41,12 @@ jobs:
               run: |
                   IMAGE_TAG=$(date +%Y%m%d%H%M%S)-${{ github.sha }}
                   echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+                  
+                  # 디버깅을 위한 변수 출력 (시크릿 값은 마스킹됨)
+                  echo "REGISTRY: ${{ env.REGISTRY }}"
+                  echo "IMAGE_NAME: ${{ env.IMAGE_NAME }}"
+                  echo "FULL_IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG"
+                  
                   docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG .
                   docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG
                   docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
@@ -106,6 +112,12 @@ jobs:
               run: |
                   IMAGE_TAG=$(date +%Y%m%d%H%M%S)-${{ github.sha }}
                   echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+                  
+                  # 디버깅을 위한 변수 출력 (시크릿 값은 마스킹됨)
+                  echo "KCR_REGISTRY_URL: ${{ secrets.KCR_REGISTRY_URL }}"
+                  echo "KCR_IMAGE_NAME: ${{ secrets.KCR_IMAGE_NAME }}"
+                  echo "FULL_IMAGE_NAME: ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_IMAGE_NAME }}:$IMAGE_TAG"
+                  
                   docker build -t ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_IMAGE_NAME }}:$IMAGE_TAG .
                   docker push ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_IMAGE_NAME }}:$IMAGE_TAG
                   docker tag ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_IMAGE_NAME }}:$IMAGE_TAG ${{ secrets.KCR_REGISTRY_URL }}/${{ secrets.KCR_IMAGE_NAME }}:latest
