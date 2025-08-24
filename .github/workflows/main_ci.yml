@@ -84,8 +84,8 @@ jobs:
                   # 베스천을 통해 백엔드 서버에 접속하여 배포 명령을 실행합니다.
                   # StrictHostKeyChecking=yes로 보안을 유지합니다.
                   ssh -v -o StrictHostKeyChecking=yes \
-                      -o ProxyCommand="ssh -v -p $SSH_PORT -W %h:%p ${{ env.SSH_USERNAME }}@${{ env.SSH_HOST }} 2>&1" \
-                      "ubuntu@localhost" \
+                      -i ~/.ssh/id_rsa -p $SSH_PORT \
+                      "ubuntu@${{ env.SSH_HOST }}" \
                       "docker stop scratcha_server || true && docker rm scratcha_server || true && docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} && docker run -d --name scratcha_server --env-file /home/ubuntu/.env -p 8001:8001 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}" 2>&1
 
     # 메인 브랜치에 푸시될 때 ArgoCD로 배포하는 새로운 잡
