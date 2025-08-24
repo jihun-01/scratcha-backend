@@ -12,8 +12,8 @@ on:
 
 jobs:
     deploy:
-        # 셀프 호스팅 러너에서 잡을 실행합니다.
-        runs-on: self-hosted
+        # GitHub 제공 러너에서 잡을 실행합니다.
+        runs-on: ubuntu-latest
         # develop 브랜치에 푸시된 경우에만 이 잡을 실행합니다.
         if: github.ref == 'refs/heads/develop'
         env:
