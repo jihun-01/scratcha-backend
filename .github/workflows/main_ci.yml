@@ -67,24 +67,22 @@ jobs:
               env:
                   SSH_HOST: ${{ secrets.SSH_HOST }} # 베스천 호스트의 퍼블릭 IP
                   SSH_USERNAME: ${{ secrets.SSH_USERNAME }} # 베스천 호스트 사용자 이름
-                  BACKEND_HOST: ${{ secrets.BACKEND_HOST }} # 백엔드 인스턴스의 프라이빗 IP
-                  BACKEND_USERNAME: ${{ secrets.BACKEND_USERNAME }} # 백엔드 인스턴스 사용자 이름
+                  SSH_PORT: ${{ secrets.SSH_PORT }} # 베스천 SSH 포트
               run: |
                   # 셸 명령어 실행 과정을 출력하여 디버깅을 돕습니다.
                   set -x
 
                   # SSH 접속 시 호스트 키 확인을 위한 디렉터리를 생성합니다.
                   mkdir -p ~/.ssh
-                  # 베스천 및 백엔드 서버의 호스트 키를 known_hosts에 추가합니다.
+                  # 베스천 호스트 키를 known_hosts에 추가합니다.
                   ssh-keyscan -v -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>&1
-                  ssh-keyscan -v -H "$BACKEND_HOST" >> ~/.ssh/known_hosts 2>&1
 
                   # 베스천을 통해 백엔드 서버에 접속하여 배포 명령을 실행합니다.
                   # StrictHostKeyChecking=yes로 보안을 유지합니다.
                   ssh -v -o StrictHostKeyChecking=yes \
-                      -o ProxyCommand="ssh -v -W %h:%p ${{ env.SSH_USERNAME }}@${{ env.SSH_HOST }} 2>&1" \
-                      "${{ env.BACKEND_USERNAME }}@${{ env.BACKEND_HOST }}" \
-                      "docker stop scratcha_server || true && docker rm scratcha_server || true && docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} && docker run -d --name scratcha_server --env-file /home/${{ env.BACKEND_USERNAME }}/.env -p 8001:8001 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}" 2>&1
+                      -o ProxyCommand="ssh -v -p $SSH_PORT -W %h:%p ${{ env.SSH_USERNAME }}@${{ env.SSH_HOST }} 2>&1" \
+                      "ubuntu@localhost" \
+                      "docker stop scratcha_server || true && docker rm scratcha_server || true && docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} && docker run -d --name scratcha_server --env-file /home/ubuntu/.env -p 8001:8001 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}" 2>&1
 
     # 메인 브랜치에 푸시될 때 ArgoCD로 배포하는 새로운 잡
     deploy-to-argocd:
