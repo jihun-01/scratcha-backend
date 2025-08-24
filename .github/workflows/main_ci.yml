@@ -43,9 +43,13 @@ jobs:
                   echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
                   
                   # 디버깅을 위한 변수 출력 (시크릿 값은 마스킹됨)
-                  echo "REGISTRY: ${{ env.REGISTRY }}"
-                  echo "IMAGE_NAME: ${{ env.IMAGE_NAME }}"
-                  echo "FULL_IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG"
+                  echo "REGISTRY: '${{ env.REGISTRY }}'"
+                  echo "IMAGE_NAME: '${{ env.IMAGE_NAME }}'"
+                  echo "FULL_IMAGE_NAME: '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG'"
+                  
+                  # 시크릿 값 길이 확인 (값이 비어있는지 체크)
+                  echo "REGISTRY length: ${#REGISTRY}"
+                  echo "IMAGE_NAME length: ${#IMAGE_NAME}"
                   
                   docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG .
                   docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG
