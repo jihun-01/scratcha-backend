@@ -57,10 +57,12 @@ jobs:
                     exit 1
                   fi
                   
-                  # 레지스트리 이름 형식 검증 (일반적인 도커 레지스트리 형식)
-                  if ! echo "$REGISTRY" | grep -E '^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*:[0-9]+$' > /dev/null; then
+                  # 레지스트리 이름 형식 검증 (카카오 클라우드 레지스트리 포함)
+                  if ! echo "$REGISTRY" | grep -E '^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*(\:[0-9]+)?$' > /dev/null; then
                     echo "⚠️  REGISTRY format might be incorrect: $REGISTRY"
-                    echo "Expected format: hostname:port (e.g., registry.example.com:5000)"
+                    echo "Expected format: hostname or hostname:port (e.g., xxx.kakaocloud.com or registry.example.com:5000)"
+                  else
+                    echo "✅ REGISTRY format validation passed"
                   fi
                   
                   # 이미지 이름 형식 검증 (소문자, 숫자, 하이픈, 슬래시만 허용)
@@ -154,10 +156,12 @@ jobs:
                     exit 1
                   fi
                   
-                  # 레지스트리 이름 형식 검증
-                  if ! echo "${{ secrets.KCR_REGISTRY_URL }}" | grep -E '^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*:[0-9]+$' > /dev/null; then
+                  # 레지스트리 이름 형식 검증 (카카오 클라우드 레지스트리 포함)
+                  if ! echo "${{ secrets.KCR_REGISTRY_URL }}" | grep -E '^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*(\:[0-9]+)?$' > /dev/null; then
                     echo "⚠️  KCR_REGISTRY_URL format might be incorrect: ${{ secrets.KCR_REGISTRY_URL }}"
-                    echo "Expected format: hostname:port (e.g., registry.example.com:5000)"
+                    echo "Expected format: hostname or hostname:port (e.g., xxx.kakaocloud.com or registry.example.com:5000)"
+                  else
+                    echo "✅ KCR_REGISTRY_URL format validation passed"
                   fi
                   
                   # 이미지 이름 형식 검증
