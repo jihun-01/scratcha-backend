@@ -13,6 +13,13 @@ COPY requirements.txt .
 # Python 의존성 설치
 RUN pip install --no-cache-dir -r requirements.txt
 
+# PyTorch CPU 버전 설치
+RUN pip install --no-cache-dir \
+    torch==2.8.0+cpu \
+    torchvision==0.17.0+cpu \
+    torchaudio==2.8.0+cpu \
+    -f https://download.pytorch.org/whl/torch_stable.html
+
 
 # --- 스테이지 2: 최종 이미지 스테이지 (실행 환경) ---
 FROM python:3.10-slim-bullseye
