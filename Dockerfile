@@ -18,9 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # PyTorch CPU 버전 설치
 RUN pip install --no-cache-dir \
-    torch==2.8.0+cpu \
-    torchvision==0.17.0+cpu \
-    torchaudio==2.8.0+cpu \
+    torch==2.7.0+cpu \
+    torchvision==0.18.0+cpu \
+    torchaudio==2.7.0+cpu \
     -f https://download.pytorch.org/whl/cpu/torch_stable.html
 
 
