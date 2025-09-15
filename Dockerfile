@@ -17,11 +17,7 @@ RUN python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # PyTorch CPU 버전 설치
-RUN pip install --no-cache-dir \
-    torch==2.7.0+cpu \
-    torchvision==0.18.0+cpu \
-    torchaudio==2.7.0+cpu \
-    -f https://download.pytorch.org/whl/cpu/torch_stable.html
+RUN pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
 
 # --- 스테이지 2: 최종 이미지 스테이지 (실행 환경) ---
