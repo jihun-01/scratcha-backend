@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # requirements.txt를 먼저 복사하여 Docker 캐시를 활용합니다.
 COPY requirements.txt .
 
+# pip 업그레이드
+RUN python -m pip install --upgrade pip
+
 # Python 의존성 설치
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -18,7 +21,7 @@ RUN pip install --no-cache-dir \
     torch==2.8.0+cpu \
     torchvision==0.17.0+cpu \
     torchaudio==2.8.0+cpu \
-    -f https://download.pytorch.org/whl/torch_stable.html
+    -f https://download.pytorch.org/whl/cpu/torch_stable.html
 
 
 # --- 스테이지 2: 최종 이미지 스테이지 (실행 환경) ---
