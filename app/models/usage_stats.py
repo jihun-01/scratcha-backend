@@ -1,8 +1,10 @@
 # backend/models/usage_stats.py
 
-from sqlalchemy import Column, Date, Integer, String, TEXT, DateTime, ForeignKey, func
+from sqlalchemy import Column, Date, Integer, String, TEXT, DateTime, ForeignKey, func, Float
 from sqlalchemy.orm import relationship
 import enum
+from datetime import datetime
+from app.core.config import settings
 
 
 from db.base import Base
@@ -17,11 +19,11 @@ class UsageStats(Base):
         autoincrement=True,
         comment="사용량 통계 ID"
     )
-    apiKeyId = Column(
+    keyId = Column(
         "api_key_id",
         Integer,
-        ForeignKey("api_key.id"),
-        nullable=False,
+        ForeignKey("api_key.id", ondelete="SET NULL"),
+        nullable=True,
         comment="통계의 기준이되는 API 키"
     )
     date = Column(
@@ -49,13 +51,41 @@ class UsageStats(Base):
         Integer,
         nullable=False,
         default=0,
-        comment="성공 응답 수"
+        comment="실패 응답 수"
+    )
+    captchaTimeoutCount = Column(
+        "captcha_timeout_count",
+        Integer,
+        nullable=False,
+        default=0,
+        comment="타임아웃 응답 수"
+    )
+    totalLatencyMs = Column(
+        "total_latency_ms",
+        Integer,
+        nullable=False,
+        default=0,
+        comment="총 지연 시간 (ms)"
+    )
+    verificationCount = Column(
+        "verification_count",
+        Integer,
+        nullable=False,
+        default=0,
+        comment="총 검증 횟수"
+    )
+    avgResponseTimeMs = Column(
+        "avg_response_time_ms",
+        Float,
+        nullable=False,
+        default=0.0,
+        comment="평균 응답 시간 (ms)"
     )
     created_at = Column(
         "created_at",
-        DateTime,
+        DateTime(timezone=True),
         nullable=False,
-        server_default=func.now(),
+        default=lambda: datetime.now(settings.TIMEZONE),
         comment="레코드 생성 시각 (기본값으로 현재 시각 사용)"
     )
 

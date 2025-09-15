@@ -1,8 +1,10 @@
 # backend/models/captcha_log.py
 
-from sqlalchemy import Column, Enum, Integer, String, TEXT, DateTime, ForeignKey, func
+from sqlalchemy import Column, Enum, Integer, String, TEXT, DateTime, ForeignKey, func, Float, Boolean
 from sqlalchemy.orm import relationship
 import enum
+from datetime import datetime
+from app.core.config import settings
 
 
 from db.base import Base
@@ -23,11 +25,11 @@ class CaptchaLog(Base):
         autoincrement=True,
         comment="캡챠 로그 ID"
     )
-    apiKeyId = Column(
+    keyId = Column(
         "api_key_id",
         Integer,
-        ForeignKey("api_key.id"),
-        nullable=False,
+        ForeignKey("api_key.id", ondelete="SET NULL"),
+        nullable=True,
         comment="사용된 API 키"
     )
     sessionId = Column(
@@ -36,16 +38,6 @@ class CaptchaLog(Base):
         ForeignKey("captcha_session.id", ondelete="CASCADE"),
         nullable=False,
         comment="연결된 캡챠 세션 ID"
-    )
-    ipAddress = Column(
-        "ip_address",
-        String(45),
-        comment="요청자 IP"
-    )
-    userAgent = Column(
-        "user_agent",
-        TEXT,
-        comment="요청자 브라우저 정보"
     )
     result = Column(
         "result",
@@ -59,11 +51,29 @@ class CaptchaLog(Base):
         nullable=False,
         comment="캡챠 문제가 해결되기까지 걸린 시간(밀리초)"
     )
+    is_correct = Column(
+        "is_correct",
+        Boolean,
+        nullable=True,
+        comment="캡챠 문제 정답 여부 (True: 정답, False: 오답)"
+    )
+    ml_confidence = Column(
+        "ml_confidence",
+        Float,
+        nullable=True,
+        comment="머신러닝 모델의 신뢰도 (0.0 ~ 1.0)"
+    )
+    ml_is_bot = Column(
+        "ml_is_bot",
+        Boolean,
+        nullable=True,
+        comment="머신러닝 모델의 봇 판정 (True: 봇, False: 사람)"
+    )
     created_at = Column(
         "created_at",
-        DateTime,
+        DateTime(timezone=True),
         nullable=False,
-        server_default=func.now(),
+        default=lambda: datetime.now(settings.TIMEZONE),
         comment="문제 생성 시간"
     )
 

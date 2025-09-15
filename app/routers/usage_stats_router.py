@@ -1,204 +1,145 @@
-from fastapi import APIRouter, Depends, status, Query
+# app/routers/usage_stats_router.py
+
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import Optional
 from datetime import date
 
 from db.session import get_db
+from app.models.user import User
+from app.core.security import getAuthenticatedUser # Updated import
+from app.services.usage_stats_service import UsageStatsService
 from app.repositories.usage_stats_repo import UsageStatsRepository
 from app.repositories.api_key_repo import ApiKeyRepository
-from app.services.usage_stats_service import UsageStatsService
-from app.schemas.usage_stats import (
-    WeeklyUsageSummary,
-    MonthlyUsageSummary,
-    DailyUsageSummary,
-    TotalRequests,
-    ResultsCounts,
-    UsageDataLog,
-    PaginatedUsageDataLog
-)
-from app.core.security import getCurrentUser
-from app.models.user import User
+from app.schemas.usage_stats import StatisticsDataResponse, StatisticsLogResponse, RequestCountSummaryResponse, RequestTotalResponse
 
-# APIRouter 인스턴스 생성
 router = APIRouter(
-    prefix="/usage-stats",
-    tags=["usage-stats"],
+    prefix="/statistics",
+    tags=["Statistics"],
     responses={404: {"description": "Not found"}},
 )
 
-# UsageStatsService 의존성 주입
-
-
-def getUsageStatsService(db: Session = Depends(get_db)) -> UsageStatsService:
-
-    return UsageStatsService(UsageStatsRepository(db), ApiKeyRepository(db))
-
 
 @router.get(
-    "/summary/daily",
-    response_model=DailyUsageSummary,
-    status_code=status.HTTP_200_OK,
-    summary="일간 사용량 요약",
-    description="오늘과 어제의 사용량 및 그 추이를 조회합니다."
+    "/summary",
+    response_model=StatisticsDataResponse,
+    summary="기간별 통계 조회",
+    description="사용자 또는 특정 API 키에 대한 기간별 통계(연/월/주/일)를 조회합니다."
 )
-def getDailySummary(
-    currentUser: User = Depends(getCurrentUser),
-    service: UsageStatsService = Depends(getUsageStatsService)
+def getSummaryStats(
+    authenticatedUser: User = Depends(getAuthenticatedUser),
+    db: Session = Depends(get_db), # Direct DB session injection
+    keyId: Optional[int] = Query(
+        None, description="통계를 조회할 API 키의 ID. 미지정 시 사용자 전체 키 합산"),
+    periodType: str = Query(..., description="조회 기간 타입 (yearly, monthly, weekly, daily)",
+                            regex="^(yearly|monthly|weekly|daily)$"),
+    startDate: Optional[date] = Query(None, description="조회 시작일 (YYYY-MM-DD)"),
+    endDate: Optional[date] = Query(None, description="조회 종료일 (YYYY-MM-DD)")
 ):
+    """
+    기간별 통계 요약 데이터를 반환합니다.
 
-    return service.getDailySummary(currentUser.id)
+    - keyId: 특정 API 키의 통계를 원할 경우 지정합니다.
+    - periodType: `yearly`, `monthly`, `weekly`, `daily` 중 하나를 선택합니다.
+    - startDate, endDate: 조회 기간을 직접 지정하고 싶을 경우 사용합니다. 미지정 시 periodType에 따라 기본값이 적용됩니다.
+    """
+    # Instantiate service inside the endpoint
+    usageStatsService = UsageStatsService(UsageStatsRepository(db), ApiKeyRepository(db))
+    data = usageStatsService.getSummary(
+        currentUser=authenticatedUser,
+        keyId=keyId,
+        periodType=periodType,
+        startDate=startDate,
+        endDate=endDate
+    )
 
-
-@router.get(
-    "/summary/weekly",
-    response_model=WeeklyUsageSummary,
-    status_code=status.HTTP_200_OK,
-    summary="주간 사용량 요약",
-    description="이번 주와 지난주의 사용량 및 그 추이를 조회합니다."
-)
-def getWeeklySummary(
-    currentUser: User = Depends(getCurrentUser),
-    service: UsageStatsService = Depends(getUsageStatsService)
-):
-
-    return service.getWeeklySummary(currentUser.id)
-
-
-@router.get(
-    "/summary/monthly",
-    response_model=MonthlyUsageSummary,
-    status_code=status.HTTP_200_OK,
-    summary="월간 사용량 요약",
-    description="이번 달과 지난달의 사용량 및 그 추이를 조회합니다."
-)
-def getMonthlySummary(
-    currentUser: User = Depends(getCurrentUser),
-    service: UsageStatsService = Depends(getUsageStatsService)
-):
-
-    return service.getMonthlySummary(currentUser.id)
-
-
-@router.get(
-    "/total-counts",
-    response_model=TotalRequests,
-    status_code=status.HTTP_200_OK,
-    summary="사용자의 전체 캡챠 요청 수 조회",
-    description="현재 인증된 사용자의 모든 API 키에 대한 전체 캡챠 요청 수를 합산하여 반환합니다.",
-)
-def getTotalRequests(
-    currentUser: User = Depends(getCurrentUser),
-    service: UsageStatsService = Depends(getUsageStatsService),
-):
-
-    return service.getTotalRequests(userId=currentUser.id)
-
-
-@router.get(
-    "/results-counts",
-    response_model=ResultsCounts,
-    status_code=status.HTTP_200_OK,
-    summary="사용자의 전체 캡챠 성공/실패 수 조회",
-    description="현재 인증된 사용자의 모든 API 키에 대한 전체 캡챠 성공 및 실패 수를 합산하여 반환합니다.",
-)
-def getResultsCounts(
-    currentUser: User = Depends(getCurrentUser),
-    service: UsageStatsService = Depends(getUsageStatsService),
-):
-
-    return service.getResultsCounts(userId=currentUser.id)
-
-
-@router.get(
-    "/api-keys/{keyId}/summary/daily",
-    response_model=DailyUsageSummary,
-    status_code=status.HTTP_200_OK,
-    summary="API 키별 일간 사용량 요약",
-    description="특정 API 키의 오늘과 어제의 사용량 및 그 추이를 조회합니다."
-)
-def getDailySummaryByApiKey(
-    keyId: int,
-    currentUser: User = Depends(getCurrentUser),
-    service: UsageStatsService = Depends(getUsageStatsService)
-):
-    return service.getDailySummaryByApiKey(keyId, currentUser)
-
-
-@router.get(
-    "/api-keys/{keyId}/summary/weekly",
-    response_model=WeeklyUsageSummary,
-    status_code=status.HTTP_200_OK,
-    summary="API 키별 주간 사용량 요약",
-    description="특정 API 키의 이번 주와 지난주의 사용량 및 그 추이를 조회합니다."
-)
-def getWeeklySummaryByApiKey(
-    keyId: int,
-    currentUser: User = Depends(getCurrentUser),
-    service: UsageStatsService = Depends(getUsageStatsService)
-):
-    return service.getWeeklySummaryByApiKey(keyId, currentUser)
-
-
-@router.get(
-    "/api-keys/{keyId}/summary/monthly",
-    response_model=MonthlyUsageSummary,
-    status_code=status.HTTP_200_OK,
-    summary="API 키별 월간 사용량 요약",
-    description="특정 API 키의 이번 달과 지난달의 사용량 및 그 추이를 조회합니다."
-)
-def getMonthlySummaryByApiKey(
-    keyId: int,
-    currentUser: User = Depends(getCurrentUser),
-    service: UsageStatsService = Depends(getUsageStatsService)
-):
-    return service.getMonthlySummaryByApiKey(keyId, currentUser)
-
-
-@router.get(
-    "/api-keys/{keyId}/total-counts",
-    response_model=TotalRequests,
-    status_code=status.HTTP_200_OK,
-    summary="API 키별 전체 캡챠 요청 수 조회",
-    description="특정 API 키의 전체 캡챠 요청 수를 반환합니다.",
-)
-def getTotalRequestsByApiKey(
-    keyId: int,
-    currentUser: User = Depends(getCurrentUser),
-    service: UsageStatsService = Depends(getUsageStatsService),
-):
-    return service.getTotalRequestsByApiKey(keyId, currentUser)
-
-
-@router.get(
-    "/api-keys/{keyId}/results-counts",
-    response_model=ResultsCounts,
-    status_code=status.HTTP_200_OK,
-    summary="API 키별 전체 캡챠 성공/실패 수 조회",
-    description="특정 API 키의 전체 캡챠 성공 및 실패 수를 합산하여 반환합니다.",
-)
-def getResultsCountsByApiKey(
-    keyId: int,
-    currentUser: User = Depends(getCurrentUser),
-    service: UsageStatsService = Depends(getUsageStatsService),
-):
-    return service.getResultsCountsByApiKey(keyId, currentUser)
+    return data
 
 
 @router.get(
     "/logs",
-    response_model=PaginatedUsageDataLog,
-    status_code=status.HTTP_200_OK,
-    summary="사용량 데이터 로그 조회",
-    description="사용자 또는 API 키별 캡챠 사용량 로그를 조회합니다.",
+    response_model=StatisticsLogResponse,
+    summary="기간별 로그 조회 (페이지네이션)",
+    description="사용자 또는 특정 API 키에 대한 캡챠 사용량 로그를 페이지네이션하여 조회합니다."
 )
-def getUsageDataLogs(
-    currentUser: User = Depends(getCurrentUser),
-    # 특정 API 키의 로그만 조회할 경우, 없으면 전체 로그 조회
-    keyId: int = None,
-    # 건너띌 레코드(항목) 의 수, 페이지네이션에서 현재 페이지의 시작 오프셋을 지정
-    skip: int = Query(0, ge=0),
-    # 한 번에 가져올 레코드의 수
-    limit: int = Query(100, ge=1, le=100),
-    service: UsageStatsService = Depends(getUsageStatsService),
+def getUsageLogs(
+    authenticatedUser: User = Depends(getAuthenticatedUser),
+    db: Session = Depends(get_db), # Direct DB session injection
+    keyId: Optional[int] = Query(
+        None, description="로그를 조회할 API 키의 ID. 미지정 시 사용자 전체 로그"),
+    periodType: str = Query(..., description="조회 기간 타입 (yearly, monthly, weekly, daily)",
+                            regex="^(yearly|monthly|weekly|daily)$"),
+    startDate: Optional[date] = Query(None, description="조회 시작일 (YYYY-MM-DD)"),
+    endDate: Optional[date] = Query(None, description="조회 종료일 (YYYY-MM-DD)"),
+    skip: int = Query(0, ge=0, description="건너뛸 항목 수"),
+    limit: int = Query(100, ge=1, le=1000, description="가져올 최대 항목 수")
 ):
-    return service.getUsageData(currentUser, keyId, skip, limit)
+    """
+    기간별 필터링된 사용량 로그 데이터를 페이지네이션하여 반환합니다.
+
+    - keyId: 특정 API 키의 로그를 원할 경우 지정합니다.
+    - periodType: `yearly`, `monthly`, `weekly`, `daily` 중 하나를 선택합니다.
+    - startDate, endDate: 조회 기간을 직접 지정하고 싶을 경우 사용합니다.
+    - skip: 페이지네이션을 위한 오프셋.
+    - limit: 페이지네이션을 위한 최대 항목 수.
+    """
+    # Instantiate service inside the endpoint
+    usageStatsService = UsageStatsService(UsageStatsRepository(db), ApiKeyRepository(db))
+    data = usageStatsService.getUsageData(
+        currentUser=authenticatedUser,
+        keyId=keyId,
+        periodType=periodType,
+        startDate=startDate,
+        endDate=endDate,
+        skip=skip,
+        limit=limit
+    )
+
+    return data
+
+
+@router.get(
+    "/requests",
+    response_model=RequestCountSummaryResponse,
+    summary="기간별 캡챠 요청 수 조회",
+    description="일간/주간/월간 캡챠 요청 수를 이전 기간과 비교하여 조회합니다."
+)
+def getRequestCountSummary(
+    authenticatedUser: User = Depends(getAuthenticatedUser),
+    db: Session = Depends(get_db), # Direct DB session injection
+    keyId: Optional[int] = Query(
+        None, description="통계를 조회할 API 키의 ID. 미지정 시 사용자 전체 키 합산"),
+    periodType: str = Query(..., description="조회 기간 타입 (daily, weekly, monthly)",
+                            regex="^(daily|monthly|weekly|daily)$")
+):
+    # Instantiate service inside the endpoint
+    usageStatsService = UsageStatsService(UsageStatsRepository(db), ApiKeyRepository(db))
+    data = usageStatsService.getRequestCountSummary(
+        currentUser=authenticatedUser,
+        keyId=keyId,
+        periodType=periodType
+    )
+
+    return data
+
+
+@router.get(
+    "/requests/total",
+    response_model=RequestTotalResponse,
+    summary="전체 캡챠 요청 수 조회",
+    description="사용자 또는 특정 API 키의 전체 캡챠 요청 수를 조회합니다."
+)
+def getTotalRequestCount(
+    authenticatedUser: User = Depends(getAuthenticatedUser),
+    db: Session = Depends(get_db), # Direct DB session injection
+    keyId: Optional[int] = Query(
+        None, description="조회할 API 키의 ID. 미지정 시 사용자 전체 키 합산")
+):
+    # Instantiate service inside the endpoint
+    usageStatsService = UsageStatsService(UsageStatsRepository(db), ApiKeyRepository(db))
+    data = usageStatsService.getTotalRequestCount(
+        currentUser=authenticatedUser,
+        keyId=keyId
+    )
+
+    return data

@@ -3,6 +3,8 @@
 
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, func
 from sqlalchemy.orm import relationship
+from datetime import datetime
+from app.core.config import settings
 
 from db.base import Base
 
@@ -16,11 +18,11 @@ class CaptchaSession(Base):
         comment="캡챠 세션 ID"
     )
 
-    apiKeyId = Column(
+    keyId = Column(
         "api_key_id",
         Integer,
-        ForeignKey("api_key.id"),
-        nullable=False,
+        ForeignKey("api_key.id", ondelete="SET NULL"),
+        nullable=True,
         comment="사용된 API 키"
     )
 
@@ -39,11 +41,25 @@ class CaptchaSession(Base):
         comment="클라이언트에 전달할 고유 토큰 (1회용)"
     )
 
+    ipAddress = Column(
+        "ip_address",
+        String(50),
+        nullable=True,
+        comment="사용자 IP 주소"
+    )
+
+    userAgent = Column(
+        "user_agent",
+        String(255),
+        nullable=True,
+        comment="사용자 User-Agent"
+    )
+
     createdAt = Column(
         "created_at",
-        DateTime,
+        DateTime(timezone=True),
         nullable=False,
-        server_default=func.now(),
+        default=lambda: datetime.now(settings.TIMEZONE),
         comment="생성 시각"
     )
 

@@ -1,8 +1,10 @@
 # backend/models/user.py
 
-from sqlalchemy import Column, String, DateTime, Enum, Integer, func
+from sqlalchemy import Column, String, DateTime, Enum, Integer
 from sqlalchemy.orm import relationship
 import enum
+from datetime import datetime
+from app.core.config import settings
 
 from db.base import Base
 
@@ -12,11 +14,11 @@ class UserRole(enum.Enum):
     USER = "user"
 
 
-class UserSubscription(enum.Enum):
-    FREE = "free"
-    STARTER = "starter"
-    PRO = "pro"
-    ENTERPRISE = "enterprise"
+# class UserSubscription(enum.Enum):
+#     FREE = "free"
+#     STARTER = "starter"
+#     PRO = "pro"
+#     ENTERPRISE = "enterprise"
 
 
 class User(Base):
@@ -59,13 +61,13 @@ class User(Base):
         comment="사용자 권한"
     )
 
-    plan = Column(
-        "subscription_plan",
-        Enum(UserSubscription),
-        default=UserSubscription.FREE,
-        nullable=False,
-        comment="구독한 플랜"
-    )
+    # plan = Column(
+    #     "subscription_plan",
+    #     Enum(UserSubscription),
+    #     default=UserSubscription.FREE,
+    #     nullable=False,
+    #     comment="구독한 플랜"
+    # )
 
     token = Column(
         "api_token",
@@ -77,24 +79,24 @@ class User(Base):
 
     createdAt = Column(
         "created_at",
-        DateTime,
-        server_default=func.now(),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(settings.TIMEZONE),
         nullable=False,
         comment="생성 시각"
     )
 
     updatedAt = Column(
         "updated_at",
-        DateTime,
-        server_default=func.now(),
-        onupdate=func.now(),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(settings.TIMEZONE),
+        onupdate=lambda: datetime.now(settings.TIMEZONE),
         nullable=False,
         comment="수정 시각"
     )
 
     deletedAt = Column(
         "deleted_at",
-        DateTime,
+        DateTime(timezone=True),
         nullable=True,
         comment="삭제 시각 (soft-delete)"
     )
@@ -104,4 +106,9 @@ class User(Base):
         "Application",
         back_populates="user",
         cascade="all, delete-orphan",  # 부모가 삭제될 때 자식도 함꼐 삭제
+    )
+
+    payments = relationship(
+        "Payment",
+        back_populates="user"
     )

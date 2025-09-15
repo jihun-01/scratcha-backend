@@ -5,6 +5,8 @@ from app.models.captcha_problem import CaptchaProblem
 from app.models.captcha_session import CaptchaSession
 from app.models.captcha_log import CaptchaLog
 from app.models.usage_stats import UsageStats
+from app.models.payment import Payment
+from app.models.contact import Contact
 
 from db.base import Base
 from logging.config import fileConfig
